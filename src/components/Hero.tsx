@@ -26,7 +26,6 @@ export default function Hero({
         loop
         playsInline
         preload="auto"
-        poster="/projects/hero.jpg"
       >
         <source src="/videos/hero.mp4" type="video/mp4" />
       </video>

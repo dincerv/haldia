@@ -99,7 +99,7 @@ export default function Footer({
               rel="noopener noreferrer"
               className="text-white/55 transition-colors hover:text-mustard-light"
             >
-              Marassa Net
+              MarassaNet
             </a>
           </p>
           <Link
