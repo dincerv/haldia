@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
 import ProjectCarousel from "./ProjectCarousel";
 import {
@@ -16,8 +15,9 @@ import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/tr";
 
 const SLIDE_MS = 4000;
-const AUTO_SCROLL_MS = 4500;
-const AUTO_PAUSE_MS = 8000;
+/** px / saniye — sürekli akış hızı */
+const FLOW_SPEED = 42;
+const MANUAL_PAUSE_MS = 5000;
 
 export default function Projects({
   locale,
@@ -28,31 +28,54 @@ export default function Projects({
 }) {
   const [filter, setFilter] = useState<ProjectCategory | "Tümü">("Tümü");
   const [slideIndex, setSlideIndex] = useState(0);
-  const scrollerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const halfWidthRef = useRef(0);
   const pausedUntilRef = useRef(0);
   const hoveringRef = useRef(false);
+  const rafRef = useRef(0);
 
   const visible =
     filter === "Tümü"
       ? projects
       : projects.filter((p) => p.category === filter);
 
-  function pauseAuto(ms = AUTO_PAUSE_MS) {
+  /** Sonsuz döngü için iki kez tekrar */
+  const loopItems = [...visible, ...visible];
+
+  function pauseFlow(ms = MANUAL_PAUSE_MS) {
     pausedUntilRef.current = Date.now() + ms;
   }
 
-  function getScrollStep() {
-    const el = scrollerRef.current;
-    if (!el) return 0;
-    const card = el.querySelector<HTMLElement>("[data-project-card]");
-    return card ? card.offsetWidth + 16 : el.clientWidth * 0.8;
+  function measureHalf() {
+    const track = trackRef.current;
+    if (!track) return 0;
+    halfWidthRef.current = track.scrollWidth / 2;
+    return halfWidthRef.current;
   }
 
-  function scrollByCard(direction: -1 | 1) {
-    const el = scrollerRef.current;
-    if (!el) return;
-    pauseAuto();
-    el.scrollBy({ left: direction * getScrollStep(), behavior: "smooth" });
+  function applyOffset() {
+    const track = trackRef.current;
+    if (!track) return;
+    const half = halfWidthRef.current || measureHalf();
+    if (half <= 0) return;
+    let x = offsetRef.current;
+    while (x >= half) x -= half;
+    while (x < 0) x += half;
+    offsetRef.current = x;
+    track.style.transform = `translate3d(${-x}px, 0, 0)`;
+  }
+
+  function nudge(direction: -1 | 1) {
+    pauseFlow();
+    const track = trackRef.current;
+    if (!track) return;
+    const card = track.querySelector<HTMLElement>("[data-project-card]");
+    const step = card ? card.offsetWidth + 24 : 280;
+    offsetRef.current += direction * step;
+    measureHalf();
+    applyOffset();
   }
 
   useEffect(() => {
@@ -63,32 +86,47 @@ export default function Projects({
   }, []);
 
   useEffect(() => {
-    scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
-    pauseAuto(1500);
-  }, [filter]);
+    offsetRef.current = 0;
+    const id = window.requestAnimationFrame(() => {
+      measureHalf();
+      applyOffset();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [filter, visible.length]);
 
   useEffect(() => {
-    if (visible.length <= 1) return;
+    if (visible.length === 0) return;
 
-    const id = window.setInterval(() => {
-      if (hoveringRef.current || Date.now() < pausedUntilRef.current) return;
-      const el = scrollerRef.current;
-      if (!el) return;
+    let last = performance.now();
 
-      const step = getScrollStep();
-      if (step <= 0) return;
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
 
-      const maxScroll = el.scrollWidth - el.clientWidth;
-      if (maxScroll <= 4) return;
+      const flowing =
+        !hoveringRef.current && Date.now() >= pausedUntilRef.current;
 
-      if (el.scrollLeft + step >= maxScroll - 8) {
-        el.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        el.scrollBy({ left: step, behavior: "smooth" });
+      if (flowing) {
+        if (!halfWidthRef.current) measureHalf();
+        offsetRef.current += FLOW_SPEED * dt;
+        applyOffset();
       }
-    }, AUTO_SCROLL_MS);
 
-    return () => window.clearInterval(id);
+      rafRef.current = window.requestAnimationFrame(tick);
+    };
+
+    rafRef.current = window.requestAnimationFrame(tick);
+
+    const onResize = () => {
+      measureHalf();
+      applyOffset();
+    };
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", onResize);
+    };
   }, [visible.length, filter]);
 
   return (
@@ -130,7 +168,7 @@ export default function Projects({
           <div className="mb-4 flex justify-end gap-2 sm:mb-5">
             <button
               type="button"
-              onClick={() => scrollByCard(-1)}
+              onClick={() => nudge(-1)}
               aria-label={dict.projects.prev}
               className="flex h-10 w-10 items-center justify-center border border-forest/15 bg-white text-forest transition-colors hover:border-forest/40 hover:bg-cream-dark"
             >
@@ -138,7 +176,7 @@ export default function Projects({
             </button>
             <button
               type="button"
-              onClick={() => scrollByCard(1)}
+              onClick={() => nudge(1)}
               aria-label={dict.projects.next}
               className="flex h-10 w-10 items-center justify-center border border-forest/15 bg-white text-forest transition-colors hover:border-forest/40 hover:bg-cream-dark"
             >
@@ -147,30 +185,28 @@ export default function Projects({
           </div>
 
           <div
-            ref={scrollerRef}
-            onPointerDown={() => pauseAuto()}
-            onWheel={() => pauseAuto()}
+            ref={viewportRef}
+            onPointerDown={() => pauseFlow()}
             onMouseEnter={() => {
               hoveringRef.current = true;
             }}
             onMouseLeave={() => {
               hoveringRef.current = false;
             }}
-            className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:-mx-6 sm:gap-5 sm:px-6 lg:-mx-8 lg:gap-6 lg:px-8"
+            className="-mx-4 overflow-hidden sm:-mx-6 lg:-mx-8"
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              {visible.map((raw) => {
+            <div
+              ref={trackRef}
+              className="flex w-max gap-4 px-4 will-change-transform sm:gap-5 sm:px-6 lg:gap-6 lg:px-8"
+            >
+              {loopItems.map((raw, i) => {
                 const project = localizeProject(raw, locale);
+                const key = `${project.slug}-${i}`;
                 return (
-                  <motion.div
-                    key={project.slug}
+                  <div
+                    key={key}
                     data-project-card
-                    layout
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-[78%] max-w-[320px] shrink-0 snap-start sm:w-[46%] sm:max-w-none md:w-[38%] lg:w-[31%]"
+                    className="w-[78vw] max-w-[320px] shrink-0 sm:w-[42vw] sm:max-w-none md:w-[34vw] lg:w-[28vw] lg:max-w-[360px]"
                   >
                     <Link
                       href={localePath(locale, `/projeler/${project.slug}`)}
@@ -181,7 +217,7 @@ export default function Projects({
                         alt={project.title}
                         slideIndex={slideIndex}
                         className="aspect-[4/3]"
-                        sizes="(max-width: 640px) 78vw, (max-width: 1024px) 46vw, 31vw"
+                        sizes="(max-width: 640px) 78vw, (max-width: 1024px) 42vw, 28vw"
                       />
 
                       <div className="relative flex flex-1 flex-col p-4 sm:p-5">
@@ -206,10 +242,10 @@ export default function Projects({
                         </p>
                       </div>
                     </Link>
-                  </motion.div>
+                  </div>
                 );
               })}
-            </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
