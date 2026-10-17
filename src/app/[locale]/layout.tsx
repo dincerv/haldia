@@ -47,6 +47,13 @@ export async function generateMetadata({
       template: `%s | Haldia`,
     },
     description: dict.meta.description,
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "32x32" },
+        { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      ],
+      apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    },
     openGraph: {
       type: "website",
       locale: ogLocale(locale),

@@ -74,6 +74,8 @@ export const tr = {
     subtitlePrefix: "Projeye tıklayarak detay ve tüm fotoğrafları inceleyin —",
     subtitleSuffix: "referans.",
     photosDetail: "fotoğraf · Detayı gör →",
+    prev: "Önceki projeler",
+    next: "Sonraki projeler",
     categories: {
       all: "Tümü",
       "Villa & Konut": "Villa & Konut",

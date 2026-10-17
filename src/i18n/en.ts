@@ -77,6 +77,8 @@ export const en: Dictionary = {
     subtitlePrefix: "Click a project to see details and the full gallery —",
     subtitleSuffix: "references.",
     photosDetail: "photos · View details →",
+    prev: "Previous projects",
+    next: "Next projects",
     categories: {
       all: "All",
       "Villa & Konut": "Villa & Residential",

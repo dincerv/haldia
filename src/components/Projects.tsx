@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
 import ProjectCarousel from "./ProjectCarousel";
@@ -26,6 +26,7 @@ export default function Projects({
 }) {
   const [filter, setFilter] = useState<ProjectCategory | "Tümü">("Tümü");
   const [slideIndex, setSlideIndex] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -34,10 +35,22 @@ export default function Projects({
     return () => window.clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }, [filter]);
+
   const visible =
     filter === "Tümü"
       ? projects
       : projects.filter((p) => p.category === filter);
+
+  function scrollByCard(direction: -1 | 1) {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>("[data-project-card]");
+    const step = card ? card.offsetWidth + 16 : el.clientWidth * 0.8;
+    el.scrollBy({ left: direction * step, behavior: "smooth" });
+  }
 
   return (
     <section id="projeler" className="bg-cream py-14 sm:py-24 lg:py-32">
@@ -74,60 +87,84 @@ export default function Projects({
           </div>
         </ScrollReveal>
 
-        <motion.div
-          layout
-          className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <AnimatePresence mode="popLayout">
-            {visible.map((raw) => {
-              const project = localizeProject(raw, locale);
-              return (
-                <motion.div
-                  key={project.slug}
-                  layout
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Link
-                    href={localePath(locale, `/projeler/${project.slug}`)}
-                    className="group flex h-full flex-col overflow-hidden bg-white shadow-[0_4px_24px_-8px_rgba(26,60,42,0.12)] transition-shadow duration-300 hover:shadow-[0_16px_48px_-12px_rgba(43,72,39,0.22)]"
-                  >
-                    <ProjectCarousel
-                      images={project.images}
-                      alt={project.title}
-                      slideIndex={slideIndex}
-                      className="aspect-[4/3]"
-                    />
+        <div className="relative mt-10 sm:mt-12">
+          <div className="mb-4 flex justify-end gap-2 sm:mb-5">
+            <button
+              type="button"
+              onClick={() => scrollByCard(-1)}
+              aria-label={dict.projects.prev}
+              className="flex h-10 w-10 items-center justify-center border border-forest/15 bg-white text-forest transition-colors hover:border-forest/40 hover:bg-cream-dark"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollByCard(1)}
+              aria-label={dict.projects.next}
+              className="flex h-10 w-10 items-center justify-center border border-forest/15 bg-white text-forest transition-colors hover:border-forest/40 hover:bg-cream-dark"
+            >
+              <ArrowRight size={18} />
+            </button>
+          </div>
 
-                    <div className="relative flex flex-1 flex-col p-4 sm:p-6">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-semibold tracking-[0.18em] text-mustard uppercase">
-                            {project.location}
-                          </p>
-                          <h3 className="mt-1.5 text-base font-semibold leading-snug text-forest sm:text-xl">
-                            {project.title}
-                          </h3>
+          <div
+            ref={scrollerRef}
+            className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:-mx-6 sm:gap-5 sm:px-6 lg:-mx-8 lg:gap-6 lg:px-8"
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              {visible.map((raw) => {
+                const project = localizeProject(raw, locale);
+                return (
+                  <motion.div
+                    key={project.slug}
+                    data-project-card
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-[78%] max-w-[320px] shrink-0 snap-start sm:w-[46%] sm:max-w-none md:w-[38%] lg:w-[31%]"
+                  >
+                    <Link
+                      href={localePath(locale, `/projeler/${project.slug}`)}
+                      className="group flex h-full flex-col overflow-hidden bg-white shadow-[0_4px_24px_-8px_rgba(26,60,42,0.12)] transition-shadow duration-300 hover:shadow-[0_16px_48px_-12px_rgba(43,72,39,0.22)]"
+                    >
+                      <ProjectCarousel
+                        images={project.images}
+                        alt={project.title}
+                        slideIndex={slideIndex}
+                        className="aspect-[4/3]"
+                        sizes="(max-width: 640px) 78vw, (max-width: 1024px) 46vw, 31vw"
+                      />
+
+                      <div className="relative flex flex-1 flex-col p-4 sm:p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold tracking-[0.18em] text-mustard uppercase">
+                              {project.location}
+                            </p>
+                            <h3 className="mt-1.5 text-base font-semibold leading-snug text-forest sm:text-lg">
+                              {project.title}
+                            </h3>
+                          </div>
+                          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center bg-forest text-mustard-light transition-colors group-hover:bg-mustard group-hover:text-forest-deep">
+                            <ArrowUpRight size={18} />
+                          </span>
                         </div>
-                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center bg-forest text-mustard-light transition-colors group-hover:bg-mustard group-hover:text-forest-deep">
-                          <ArrowUpRight size={18} />
-                        </span>
+                        <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-muted">
+                          {project.summary}
+                        </p>
+                        <p className="mt-3 text-xs font-semibold tracking-wide text-forest/70 transition-colors group-hover:text-forest">
+                          {project.images.length} {dict.projects.photosDetail}
+                        </p>
                       </div>
-                      <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-muted sm:line-clamp-3">
-                        {project.summary}
-                      </p>
-                      <p className="mt-3 text-xs font-semibold tracking-wide text-forest/70 transition-colors group-hover:text-forest sm:mt-4">
-                        {project.images.length} {dict.projects.photosDetail}
-                      </p>
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </section>
   );
