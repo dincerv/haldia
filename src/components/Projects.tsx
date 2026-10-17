@@ -16,6 +16,8 @@ import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/tr";
 
 const SLIDE_MS = 4000;
+const AUTO_SCROLL_MS = 4500;
+const AUTO_PAUSE_MS = 8000;
 
 export default function Projects({
   locale,
@@ -27,6 +29,31 @@ export default function Projects({
   const [filter, setFilter] = useState<ProjectCategory | "Tümü">("Tümü");
   const [slideIndex, setSlideIndex] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const pausedUntilRef = useRef(0);
+  const hoveringRef = useRef(false);
+
+  const visible =
+    filter === "Tümü"
+      ? projects
+      : projects.filter((p) => p.category === filter);
+
+  function pauseAuto(ms = AUTO_PAUSE_MS) {
+    pausedUntilRef.current = Date.now() + ms;
+  }
+
+  function getScrollStep() {
+    const el = scrollerRef.current;
+    if (!el) return 0;
+    const card = el.querySelector<HTMLElement>("[data-project-card]");
+    return card ? card.offsetWidth + 16 : el.clientWidth * 0.8;
+  }
+
+  function scrollByCard(direction: -1 | 1) {
+    const el = scrollerRef.current;
+    if (!el) return;
+    pauseAuto();
+    el.scrollBy({ left: direction * getScrollStep(), behavior: "smooth" });
+  }
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -37,20 +64,32 @@ export default function Projects({
 
   useEffect(() => {
     scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+    pauseAuto(1500);
   }, [filter]);
 
-  const visible =
-    filter === "Tümü"
-      ? projects
-      : projects.filter((p) => p.category === filter);
+  useEffect(() => {
+    if (visible.length <= 1) return;
 
-  function scrollByCard(direction: -1 | 1) {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-project-card]");
-    const step = card ? card.offsetWidth + 16 : el.clientWidth * 0.8;
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
-  }
+    const id = window.setInterval(() => {
+      if (hoveringRef.current || Date.now() < pausedUntilRef.current) return;
+      const el = scrollerRef.current;
+      if (!el) return;
+
+      const step = getScrollStep();
+      if (step <= 0) return;
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 4) return;
+
+      if (el.scrollLeft + step >= maxScroll - 8) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: step, behavior: "smooth" });
+      }
+    }, AUTO_SCROLL_MS);
+
+    return () => window.clearInterval(id);
+  }, [visible.length, filter]);
 
   return (
     <section id="projeler" className="bg-cream py-14 sm:py-24 lg:py-32">
@@ -109,6 +148,14 @@ export default function Projects({
 
           <div
             ref={scrollerRef}
+            onPointerDown={() => pauseAuto()}
+            onWheel={() => pauseAuto()}
+            onMouseEnter={() => {
+              hoveringRef.current = true;
+            }}
+            onMouseLeave={() => {
+              hoveringRef.current = false;
+            }}
             className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:-mx-6 sm:gap-5 sm:px-6 lg:-mx-8 lg:gap-6 lg:px-8"
           >
             <AnimatePresence mode="popLayout" initial={false}>

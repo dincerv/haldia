@@ -43,9 +43,9 @@ export default function Hero({
           <Image
             src="/brand/logo-white.png"
             alt="Haldia Peyzaj ve Mimarlık"
-            width={520}
-            height={200}
-            className="h-20 w-auto max-w-[min(100%,280px)] object-contain object-left mix-blend-screen drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)] sm:h-36 sm:max-w-none md:h-44 lg:h-52"
+            width={720}
+            height={280}
+            className="h-28 w-auto max-w-[min(100%,360px)] object-contain object-left mix-blend-screen drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)] sm:h-44 sm:max-w-[min(100%,520px)] md:h-56 md:max-w-none lg:h-64"
             priority
           />
 
