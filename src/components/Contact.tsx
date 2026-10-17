@@ -6,18 +6,18 @@ import { motion } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
 import type { Dictionary } from "@/i18n/tr";
 
+const CONTACT_EMAIL = "info@haldiapeyzaj.com";
+
 const contacts = [
   {
     name: "Samet TAŞ",
     roleKey: "architect" as const,
-    email: "samettas@haldiapeyzaj.com",
     phone: "0553 984 94 47",
     phoneHref: "tel:+905539849447",
   },
   {
     name: "Asım ÇAPKIN",
     roleKey: "sales" as const,
-    email: "satis@haldiapeyzaj.com",
     phone: "0552 251 36 71",
     phoneHref: "tel:+905522513671",
   },
@@ -89,9 +89,16 @@ export default function Contact({ dict }: { dict: Dictionary }) {
 
         <div className="mt-10 grid gap-8 sm:mt-14 lg:grid-cols-5 lg:gap-14">
           <ScrollReveal className="space-y-4 lg:col-span-2">
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="flex min-h-12 items-center gap-3 border border-white/10 bg-white/5 px-5 py-4 text-sm text-white/90 backdrop-blur-sm transition-colors hover:border-mustard/40 hover:text-mustard-light sm:px-6"
+            >
+              <Mail size={18} className="shrink-0 text-mustard" />
+              <span className="break-all font-medium">{CONTACT_EMAIL}</span>
+            </a>
             {contacts.map((person) => (
               <div
-                key={person.email}
+                key={person.name}
                 className="border border-white/10 bg-white/5 p-5 backdrop-blur-sm sm:p-6"
               >
                 <div className="flex items-start gap-3">
@@ -105,14 +112,7 @@ export default function Contact({ dict }: { dict: Dictionary }) {
                     </p>
                   </div>
                 </div>
-                <div className="mt-5 space-y-3">
-                  <a
-                    href={`mailto:${person.email}`}
-                    className="flex min-h-11 items-center gap-2 break-all text-sm text-white/80 transition-colors hover:text-mustard-light"
-                  >
-                    <Mail size={16} className="shrink-0 text-mustard" />
-                    {person.email}
-                  </a>
+                <div className="mt-5">
                   <a
                     href={person.phoneHref}
                     className="flex min-h-11 items-center gap-2 text-sm text-white/80 transition-colors hover:text-mustard-light"
@@ -126,10 +126,10 @@ export default function Contact({ dict }: { dict: Dictionary }) {
             <p className="text-xs text-white/45">
               {dict.contact.formNoteBefore}{" "}
               <a
-                href="mailto:info@haldiapeyzaj.com"
+                href={`mailto:${CONTACT_EMAIL}`}
                 className="text-mustard-light hover:underline"
               >
-                info@haldiapeyzaj.com
+                {CONTACT_EMAIL}
               </a>{" "}
               {dict.contact.formNoteAfter}
             </p>

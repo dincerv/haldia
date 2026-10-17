@@ -60,20 +60,11 @@ export default function Footer({
             <ul className="mt-4 space-y-3">
               <li>
                 <a
-                  href="mailto:samettas@haldiapeyzaj.com"
+                  href="mailto:info@haldiapeyzaj.com"
                   className="flex items-start gap-2 break-all text-sm text-white/60 transition-colors hover:text-mustard-light"
                 >
                   <Mail size={14} className="mt-0.5 shrink-0 text-mustard" />
-                  samettas@haldiapeyzaj.com
-                </a>
-              </li>
-              <li>
-                <a
-                  href="mailto:satis@haldiapeyzaj.com"
-                  className="flex items-start gap-2 break-all text-sm text-white/60 transition-colors hover:text-mustard-light"
-                >
-                  <Mail size={14} className="mt-0.5 shrink-0 text-mustard" />
-                  satis@haldiapeyzaj.com
+                  info@haldiapeyzaj.com
                 </a>
               </li>
               <li>
@@ -83,6 +74,15 @@ export default function Footer({
                 >
                   <Phone size={14} className="text-mustard" />
                   0553 984 94 47
+                </a>
+              </li>
+              <li>
+                <a
+                  href="tel:+905522513671"
+                  className="flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-mustard-light"
+                >
+                  <Phone size={14} className="text-mustard" />
+                  0552 251 36 71
                 </a>
               </li>
             </ul>
