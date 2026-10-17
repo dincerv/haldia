@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.vercel
+Haldia Peyzaj
+gemini_generated_video_*.mp4
+*.pem
+coverage
+.env*
+!.env.example
